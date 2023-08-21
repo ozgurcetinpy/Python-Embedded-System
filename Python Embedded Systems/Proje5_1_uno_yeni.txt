@@ -1,0 +1,171 @@
+#include <SPI.h>
+#include <Ethernet.h>
+
+//sıradan bir mac adresi atadık
+byte mac[] = {
+  0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED
+};
+
+//IP ayarlamaları
+//aşağıdaki gibi ayarlama yaparsanız sorun ile kaşılaşmazsınız
+IPAddress ip(192, 168, 25, 70);
+IPAddress myDns(192, 168, 25, 1);
+IPAddress gateway(192, 168, 25, 1);
+IPAddress subnet(255, 255, 255, 0);
+
+int relay1 = 2, relay2 = 3, relay3 = 5, relay4 = 6, relay5 = 7, relay6 = 8, relay7 = 9, relay8 = A0;
+String sendVal = "";
+
+//kullanmak üzere seçtiğimiz port
+EthernetServer server(61);
+
+boolean alreadyConnected = false; //ilk kez bağlantı yapılıyormu kontrol değişkeni
+
+void setup() {
+
+  // Shield kurulumu
+  Ethernet.begin(mac, ip, myDns, gateway, subnet);
+  //Serial.println("Failed to obtaining an IP address");
+
+  // check for Ethernet hardware present
+  if (Ethernet.hardwareStatus() == EthernetNoHardware)
+  {
+    Serial.println("Ethernet shield was not found");
+    while (true);
+  }
+
+
+  // check for Ethernet cable
+  if (Ethernet.linkStatus() == LinkOFF)
+  {
+    Serial.println("Ethernet cable is not connected.");
+    while (true);
+  }
+
+
+  // server başlattık ve client' leri dinlemeye başladık
+  server.begin();
+
+  //Seri haberleşmeyi başlattık
+  Serial.begin(9600);
+
+  pinMode(relay1, OUTPUT);
+  pinMode(relay2, OUTPUT);
+  pinMode(relay3, OUTPUT);
+  pinMode(relay4, OUTPUT);
+  pinMode(relay5, OUTPUT);
+  pinMode(relay6, OUTPUT);
+  pinMode(relay7, OUTPUT);
+  pinMode(relay8, OUTPUT);
+
+
+  //IP adresini serial monitör' e yazdırdık
+  Serial.print("Arduino's IP Address: ");
+  Serial.println(Ethernet.localIP());
+
+  Serial.print("DNS Server's IP Address: ");
+  Serial.println(Ethernet.dnsServerIP());
+
+  Serial.print("Gateway's IP Address: ");
+  Serial.println(Ethernet.gatewayIP());
+
+  Serial.print("Network's Subnet Mask: ");
+  Serial.println(Ethernet.subnetMask());
+}
+
+unsigned long lastTime = 0;
+
+void loop() {
+  // bağlanan client' ları yakaladık
+  EthernetClient client = server.available();
+
+  if (client) {
+    //ilk kez bağlantı yapılıyorsa tampondaki verileri temizledik
+    if (!alreadyConnected) {
+      // clear out the input buffer:
+      client.flush();
+      Serial.println("Baglantı Var");
+      alreadyConnected = true;
+    }
+
+    //client den veri geliyor mu?
+    if (client.available() > 0) {
+      // Client' ten gelen veriyi oku
+      char thisChar = client.read();
+      // clientten gelen veriyi görüntüle
+      Serial.print("Okunan Karakter: ");
+      Serial.print(thisChar);
+      Serial.print(" ");
+
+      switch (thisChar)             //gelen karaktere göre işlem yapalım
+      {
+        case '1':
+          digitalWrite(relay1, !digitalRead(relay1));
+          sendVal = "relay1|" + String(digitalRead(relay1)) + "|";
+          client.print(sendVal);
+          break;
+        case '2':
+          digitalWrite(relay2, !digitalRead(relay2));
+          sendVal = "relay2|" + String(digitalRead(relay2)) + "|";
+          client.print(sendVal);
+          break;
+        case '3':
+          digitalWrite(relay3, !digitalRead(relay3));
+          sendVal = "relay3|" + String(digitalRead(relay3)) + "|";
+          client.print(sendVal);
+          break;
+        case '4':
+          digitalWrite(relay4, !digitalRead(relay4));
+          sendVal = "relay4|" + String(digitalRead(relay4)) + "|";
+          client.print(sendVal);
+          break;
+        case '5':
+          digitalWrite(relay5, !digitalRead(relay5));
+          sendVal = "relay5|" + String(digitalRead(relay5)) + "|";
+          client.print(sendVal);
+          break;
+        case '6':
+          digitalWrite(relay6, !digitalRead(relay6));
+          sendVal = "relay6|" + String(digitalRead(relay6)) + "|";
+          client.print(sendVal);
+          break;
+        case '7':
+          digitalWrite(relay7, !digitalRead(relay7));
+          sendVal = "relay7|" + String(digitalRead(relay7)) + "|";
+          client.print(sendVal);
+          break;
+        case '8':
+          digitalWrite(relay8, !digitalRead(relay8));
+          sendVal = "relay8|" + String(digitalRead(relay8)) + "|";
+          client.print(sendVal);
+          break;
+        case 'a':
+          sendVal = "sensor2|" + String(analogRead(A1) ) + "|";
+          client.print(sendVal);
+          break;
+        case 'b':
+          sendVal = "sensor3|" + String(analogRead(A2) ) + "|";
+          client.print(sendVal);
+          break;
+        case 'c':
+          sendVal = "sensor4|" + String(analogRead(A3) ) + "|";
+          client.print(sendVal);
+          break;
+        case 'd':
+          sendVal = "sensor5|" + String(analogRead(A4) ) + "|";
+          client.print(sendVal);
+          break;
+        case 'e':
+          sendVal = "sensor6|" + String(analogRead(A5) ) + "|";
+          client.print(sendVal);
+          break;
+      }
+      //önceki tcp iletişim aradaki zamanı seri porta yazdırdık.
+      Serial.print("Gecen Zaman: ");
+      Serial.println(millis() - lastTime);
+      lastTime = millis();
+
+    }
+  }
+
+}
